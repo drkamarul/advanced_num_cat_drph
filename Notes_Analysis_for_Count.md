@@ -1,0 +1,138 @@
+---
+title: |
+  | Regression Models for Count Data
+  | DrPH (Epidemiology Speciality)
+author: |
+  | Kamarul Imran Musa
+  | Assoc Prof (Epidemiology and Statistics
+date: "2020-05-27"
+output:
+  html_document: 
+    highlight: tango
+    keep_md: yes
+    number_sections: yes
+    theme: united
+    toc: yes
+    toc_float: yes
+  pdf_document:
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
+---
+
+\newpage
+
+
+
+
+# Introduction
+
+The number of times an event can occur is a common form of data.
+
+# Motivation
+
+Because the outcome is count, the popular model is Poisson regression. 
+
+Sometimes, the parameter $\mu$ is described as rate. The rate parameter is defined many ways (always in time frame):
+
+- rate per year
+- rate per season
+- person-years
+
+For this lecture, we deal with count not rate 
+
+# Model
+
+in Poisson regression, if Y is is the number of occurence, the probability distribution is written as 
+$$f(y) = \frac{\mu^y e^{-\mu}}{y!}$$
+where $\mu$ is the average number of occurence. It can be shown that $E(Y) = \mu$ and $var(Y)=\mu$
+
+# Data
+
+Usually data come in aggregated forms
+
+![Table 9.4 Dobson](tab94.JPG)
+
+Source: An Introduction to Generalized Linear Models 
+
+The question of interest is whether there is any association between tumor type and site. The expected value of $Y_{jk}$ is
+
+$$E(Y_{jk})= \mu_{jk} = n\theta_{jk}$$
+
+The usual link function for Poisson model gives
+
+$$log \, \mu_{jk}=log \, n + log \, \theta_{jk}$$
+
+and the term $log \, n$ is the same for all the $Y_{jk}$
+
+# R codes
+
+The saturated model
+
+````
+```{r}
+ressat.melanoma<-glm(frequency~site*tumor,family=poisson(),
+data=melanoma
+```
+````
+
+The additive model
+
+````
+```{r} 
+resadd.melanoma<-glm(frequency~site + tumor,family=poisson(),
+data=melanoma)
+```
+````
+
+The minimal model
+
+````
+```{r}
+resmin.melanoma<-glm(frequency~1, family=poisson(),
+data=melanoma)
+```
+````
+
+# Interpretation
+
+Let us say the result for the analysis is 
+
+![Table 9-10](tab9-10.PNG)
+
+Where the reference are the Melanonic freckle (HMF) on head or neck (HNK)
+
+The expected frequencies for HMF on HNK for
+
+- the minimal model $=\exp^{3.507}= 33.35$
+- the additive model $=\exp^{1.754}= 5.78$
+- the saturated model $=\exp^{3.091}= 22$
+
+The expected frequencies for indeterminate tumours (IND) in the extremeties (EXT) for
+
+- the minimal model $=\exp^{3.507}= 33.35$
+- the additive model $=\exp^{1.754 + 0.499 + 1.201}= 31.64$
+- the saturated model $=\exp^{3.091 - 0.693 - 0.788 + 1.723}= 28$
+
+
+# Model assessment
+
+## Measures
+
+We can examine
+
+- Pearson residuals
+- Deviance residuals
+
+## Assessment
+
+Measures to assess includes
+
+- Goodness of fit $\chi^2$
+- Deviance, $D$
+
+# References
+
+- Annette J Dobson, Adrian G Barnett. An introduction to Generalized Linear Models. CRC Press
+- https://www3.nd.edu/~rwilliam/stats3/CountModels.pdf
+
