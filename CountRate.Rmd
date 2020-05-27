@@ -1,0 +1,234 @@
+---
+title: "Analysis for Rate Data"
+author: |
+  | Kamarul Imran Musa
+  | Assoc Prof (Epidemiology and Statistics
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
+  html_document:
+    highlight: tango
+    number_sections: yes
+    theme: united
+    toc: yes
+    toc_depth: '3'
+    toc_float: yes
+---
+
+\newpage
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Prepare environment
+
+- Create project 
+- Load library
+
+
+```{r}
+library(tidyverse)
+library(broom)
+library(janitor)
+```
+
+# Read data
+
+Now, 
+
+- Read a text data
+- Names the columns/variables
+- Transform 'Number of Cases' using log and name the column as 'lcases'
+- Add 'lcases' to the data
+
+```{r}
+credit <- read_table("creditcard.txt", col_names = c('income', 'cases', 'crcards')) #read txt
+credit <- credit %>% mutate(lcases= log(cases))
+```
+
+# Explore dataset
+
+```{r}
+glimpse(credit)
+```
+
+
+# Fit Poisson linear model
+
+Use 'lcases' as the offset
+
+```{r}
+credit.m <- glm(crcards ~ income + offset(lcases), family = poisson, data = credit)
+summary(credit.m)
+```
+
+- The model is $log\frac{\mu}{t} = -2.387 + 0.021 \times Income$, where $log(t) = cases$. 
+- The $\hat\beta$ are the Poisson regression coefficients. 
+  
+# Estimation
+  
+## Estimate the 95% confidence interval for log rate
+
+```{r}
+tidy(credit.m, conf.int = TRUE)
+```
+
+## Estimate the incidence rate ratio (IRR)
+
+```{r}
+tidy(credit.m, exponentiate = TRUE, conf.int = TRUE)
+```
+
+With 1 unit increase in INCOME the incidence rate increase for 1.021 or $2.1\%$.  
+
+# Prediction
+
+## Predict the log rate for all data 
+
+Remember when the outcome is $log\frac{\mu}{t}$ or the log rate; then we can calculate by estimating
+
+```{r}
+credit.m2 <- augment(credit.m)
+credit.m2
+```
+
+Manually, we can 
+
+```{r}
+log.oc<- -2.3866 + 0.02075*24
+log.oc
+```
+
+The expected log rate is not meaningful. Remember that $log\frac{\mu}{t} = \beta_0 + \beta_1x_1 + ... + \beta_px_p$
+
+## Prediction for the expected log count and expected count
+
+It is better to interpret using the expected log count or the expected count. 
+
+Let's see the fitted count (Expected count) for observation 23 (where, Income=65 and log(t)=log(cases)=1.79).
+
+Try calculate
+
+1.  the expected log of count for INCOME=65
+2.  the expected count for INCOME=65
+
+first for observation 23 (Income=65). For this observation, the Poisson regression equation is:
+
+## Prediction for the expected log count
+
+The expected log count 
+
+```{r}
+#expected log count
+log.count<- -2.3866+0.0208*65+1.79
+log.count
+#is similar to
+predict(credit.m, type = 'link')
+predict(credit.m, type = 'link', se.fit = TRUE)
+```
+
+
+## Prediction for the expected count
+
+The expected count 
+
+```{r}
+exp.count <- exp(log.count)
+exp.count
+#is similar to
+predict(credit.m, type = 'response')
+predict(credit.m, type = 'response', se.fit = TRUE)
+#OR
+credit.fit <- fitted(credit.m) # but fitted() does not give SE
+credit.fit
+```
+
+# Residuals
+
+## Residuals for default
+
+The default gives the Pearson residuals 
+
+```{r}
+residuals(credit.m)
+```
+
+## Residuals for expected count
+
+These are the raw residuals
+
+```{r}
+residuals(credit.m, type = 'response')
+#for example, no 23 the observed = 6 
+#and the expected = 2.126
+#so the residuals = 6-2.126-3.87
+```
+
+# Plot predicted vs observed
+
+```{r}
+credit <- bind_cols(credit.m2, exp_crcards = credit.fit)
+head(credit)
+ggplot(data = credit) + geom_point(aes(x = income, y = crcards), colour = 'blue') +
+  geom_point(aes(x = income, y = exp_crcards), colour = 'red')
+```
+
+# Getting more elaborate predictions
+
+To calculate the expected count based on *augment*, do this (example for INCOME=65 observation 23)
+
+```{r}
+log.count23 <- -2.38658647 + 0.02075784*65 + 1.7917595
+log.count23
+#similar to .fitted for observation no 23. Then exp it to get the expected count 
+exp(log.count23)
+
+```
+
+The expected count (if income = 65 and obsrved cards = 6) is calculated from
+
+$$log\frac{\mu}{t} = -2.3866 + 0.0208 \times 65$$
+$$log(\mu) =  -2.3866 + 0.0208 \times 65 + log(t)$$
+$$log(\mu) =  -2.3866 + 0.0208 \times 65 + log(6)$$
+$$\mu =  \exp(-2.3866 + 0.0208 \times 65 + 1.79176)$$
+
+```{r}
+exp(-2.3866 + 0.0208*65 + 1.79176)
+```
+
+The expected rate (if income = 65 and obsrved cards = 6) would be
+
+
+$$log\frac{\mu}{t} = -2.3866 + 0.0208 \times 65$$
+
+$$\frac{\mu}{t} = exp(-2.3866 + 0.0208 \times 65)$$
+
+```{r}
+exp(-2.3866 + 0.0208*65)
+```
+
+
+# New prediction
+
+Let calculate the expected count for INCOME 25, 35, 45, 55, 65, 75 and 85 and cases equals 6 
+
+```{r}
+log(6)
+new.data<-data.frame(income=c(25, 35, 45, 55, 65, 75,85), lcases = log(6))
+new.data
+predict(credit.m, newdata = new.data, type = 'response')
+```
+
+So the expected count for INCOME equals 25, 35, 45, 55, 65, 75 and 85 with cases equals 6, are 0.9269271 1.1407639 1.4039315 1.7278105 2.1264064 2.6169562 3.2206729, respectively. 
+
+# References
+
+1.  <https://denishaine.wordpress.com/2013/05/10/veterinary-epidemiologic-research-count-and-rate-data-poisson-regression-and-risk-ratios/>
+2.  <https://onlinecourses.science.psu.edu/stat504/node/170>
+3.  <https://cran.r-project.org/web/packages/pscl/vignettes/countreg.pdf>
+4.  <http://www.ats.ucla.edu/stat/stata/output/stata_poisson_output.htm>
+5.  Diagnostic . <http://stats.stackexchange.com/questions/70558/diagnostic-plots-for-count-regression>

@@ -1,0 +1,168 @@
+---
+title: |
+  | Regression Models for Rate Data
+  | DrPH (Epidemiology Speciality)
+author: |
+  | Kamarul Imran Musa
+  | Assoc Prof (Epidemiology and Statistics
+date: "`r Sys.Date()`"
+output:
+  html_document:
+    highlight: tango
+    number_sections: yes
+    theme: united
+    toc: yes
+    toc_depth: '3'
+    toc_float: yes
+  pdf_document:
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
+---
+
+\newpage
+
+# Introduction
+
+At the end of the chapter, readers should be able
+
+1. to understand the concept of count regression for rate data
+2. to analyze rate data3
+3. to interpret the output of regression for rate data
+
+# Motivation 
+
+The number of times an event occurs is a common form of data. They are known as count data. And the Poisson distribution is often used to model count data.
+
+When events occur over time, space, or some other index of size, models can focus on the rate at which the events occur. For example, in analyzing numbers of murders in 2006 for a sample of cities, we could form a rate for each city by dividing the number of murders by the city's population size.
+
+A model might describe how the rate depends on explanatory variables such as the city's unemployment rate, median income, and percentage of residents having completed high school.
+
+# Parameters
+
+The parameter in count data requires careful definition. Often it needs to be described as a rate; for example, the average number of customers who buy a particular product out of every 100 customers who enter the store, for motor vehicle crashes the rate parameter may be defined in many different ways: crashes per 1,000 population, crashes per 1,000 licensed drivers, crashes per 1,000 motor vehicles, or crashes per 100,000 kilometres travelled by motor vehicles.
+
+The time scale should be included in the definition; for example, the motor
+vehicle crash rate is usually specified as the rate per year (e.g., crashes per 100,000 kms per year), while the rate of tropical cyclones refers to the cyclone season from November to April in Northeastern Australia.
+
+More generally, the rate is specified in terms of units of exposure; for instance, customers entering a store are exposed to the opportunity to buy the product of interest. For occupational injuries, each worker is exposed for the period he or she is at work, so the rate may be defined in terms of person-years at risk.
+
+# Model
+
+When a response count Y has index (such as population size) equal to t , the sample rate is $\frac{Y}{t}$, the expected value of the rate is $\frac{\mu}{t}$ , where $\mu = E(y)$.
+
+A log linear model for the expected rate has form:
+$$log \frac{\mu}{t} = \alpha + \beta X$$
+
+The equivalent representation is:
+$$\textrm{log} \ \mu - \textrm{log} \ t = \alpha + \beta X$$
+$$\textrm{log} \ \mu = \alpha + \beta + \textrm{log} \ t$$
+The adjustment term is the $-log \ t$ to the log of mean is called an offset. For the loglinear model, the expected number of outcomes satisfies
+
+$$\mu = t \times \exp{(\alpha + \beta X)} $$
+
+
+## Example 1
+
+In the first situation, the events relate to varying amounts of exposure which need to be taken into account when modelling the rate of events.
+
+Poisson regression is used in this case. The natural link function is the logarithmic function
+
+For examples, let us assume a model, with
+
+1. the outcome, $Y =$ annual number of collisions between trains and
+road vehicles, for $t$ million kilometres of train travel.
+2. the predictor, $x =$ years since 1975. It means if the year is 1975 then $x=1975-1975=0$.
+
+Assuming a Poisson distribution for Y, and we get the maximum likelihood estimate for the model:
+
+$$\textrm{log} \ \hat{\mu} - \textrm{log} \ t = -4.21 - 0.0329x ; SE(x) = 0.011$$
+
+## Interpretation
+
+1. The estimated rate is $\exp(-4.21-0.0329x)$, which is $\exp^{4.21}(\exp^{-0.0329x}) = 0.0148 \times 0.968x$.
+2. The estimated rate of train accidents decreases from 0.0148 in 1975 (take $x = 0$) to 0.0059 in 2003 (take $x = 28$).
+3. The estimated rate in 2003 of 0.0059 per million kilometers is roughly 6 per billion kilometers.
+
+## Example 2
+
+Let us assume we would like to predict the rate of depression in a school and its association with the average stress score. We have a dataset of $n=100$ where each observation correspond to one classroom. The dataset contain these variables:
+
+1.  DEPRESSED: number of student with depression as the outcome variable ($y$)
+2.  STRESS: average stress score for each class as the predictor ($x_1$)
+3.  POP: number of students for each class as the denominator ($x_2$). Will act as the offset variable
+
+The model will be:
+$$\textrm{log} \ \frac{\hat{y}}{t} = \hat{\beta}_0 + \hat{\beta}_1X_1$$
+
+And let us say after estimation, we get this
+$$\textrm{log} \ \frac{DEPRESSED}{POP} = -2.39 + 0.0208(STRESS)$$
+
+For 1 unit increase in stress score, the incidence rate of depression increases by a factor of $exp(0.0208) = 1.021$. This can be reported as the incidence rate ratio = 1.021. It also means that with 1 unit increase in stress score, the rate of depression increases by 2.1 percent.  
+
+The expected log rate for students with stress score, STRESS = 100 is
+
+$$\textrm{log} \ \frac{DEPRESSED}{POP} = -2.39 + 0.0208(100)$$
+
+This means, the $\textrm{log rate of depression} = -0.31$. Thus, the expected rate of depression with population of students with stress = 100,is $exp(-0.31)$, that is 0.733 or 73.3 percent of students with stress score of 100 are depressed.
+
+$$\textrm{log} \ DEPRESSED - \textrm{log} \ POP = -2.39 + 0.0208(STRESS)$$
+$$\textrm{log} \ DEPRESSED  = -2.39 + 0.0208(STRESS) + \textrm{log} \ POP$$
+
+So,when the STRESS = 100, then
+
+$$\textrm{log} \ DEPRESSED  = -2.39 + 0.0208(100) + \textrm{log} \ POP$$
+
+And,when the STRESS = 100 and POP = 200, then
+
+$$\textrm{log} \ DEPRESSED  = -2.39 + 0.0208(100) + log(200)$$
+
+which means the log of expected number of depressed students are 1.99. It means that the expected count of depressed students are $exp(1.99) =  7.32$ for a population of 200 students with stress score of 100. 
+
+# Statistical inference
+
+A Wald 95%confidence interval for a model parameter $\beta$ equals $\hat{\beta} \pm 1.96(SE)$, where SE is the standard error of $\hat{\beta}$.
+
+To test if $H_0: \beta = 0$, the Wald test statistic is
+$$z = \frac{\hat{\beta}}{SE}$$
+
+It has an approximate standard normal distribution when $\beta = 0$. Equivalently, the $z^2$ has an approximate chi-squared distribution with $df = 1$.
+
+Hypotheses about the parameters $\beta_j$ can be tested using the Wald, Score test or likelihood ratio statistics.
+
+# Model assessment
+
+## The deviance
+
+Let us consider 2 situations: Let $L_M$ denote the maximized log-likelihood value for a model M of interest. Let $L_S$ denote the maximized log-likelihood value for the most complex model possible.
+
+This model has a separate parameter for each  observation, and it provides a perfect fit
+to the data. The model is said to be saturated. Because the saturated model has additional parameters, its maximized log likelihood $L_S$ is at least as large as the maximized log likelihood LM for a simpler model M.
+
+The deviance of a GLM is defined as $Deviance= -2(L_M - L_S)$
+
+The deviance is the likelihood-ratio statistic for comparing model M to the saturated model. It is a test statistic for the hypothesis that all parameters that are in the saturated model but not in model M equal zero.
+
+## Residuals between observations and model fit
+
+For Poisson sampling, for instance, the standard deviation of a count is $\sqrt{\mu_i}$, so more variability tends to occur when $\mu_i$ is larger.
+
+Poisson GLMs for the Pearson residual for count $i$ equals:
+
+$$e_i = \frac{y_i - \hat{\mu}_i}{\sqrt{\hat{\mu_i}}}$$
+
+The standardized residual takes $y_i - \hat{\mu_i}$ and divides it by its estimated standard error, that is:
+
+$$\textrm{Standardized residuals} = \frac{y_i - \hat{\mu_i}}{SE}$$
+
+
+Standardized residuals larger than about 2 or 3 in absolute value are worthy of attention, although some values of this size occur by chance alone when the number of observations is large.
+
+# References 
+
+1. Alan Agresti. An Introduction to CategoricalData Analysis. 2nd edition. Wiley. http://
+www.amazon.com/An-Introduction-Categorical-Data-Analysis/dp/0471226181
+2. RegressionModels forCountData in R https://cran.r-project.org/web/packages/
+pscl/vignettes/countreg.pdf
+3. Annette J. Dobson. AN INTRODUCTION TO GENERALIZED LINEARMODELS. CHAPMAN
+& HALL/CRC

@@ -1,0 +1,172 @@
+---
+title: "Practicals: Analysis of Count Data"
+author: |
+  | Kamarul Imran Musa
+  | Assoc Prof (Epidemiology and Statistics
+date: "`r Sys.Date()`"
+output:
+  pdf_document:
+    number_sections: yes
+    toc: yes
+    toc_depth: 3
+  html_document:
+    highlight: tango
+    number_sections: yes
+    theme: united
+    toc: yes
+    toc_depth: '3'
+    toc_float: yes
+---
+
+\newpage
+
+```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+# Prepare environment
+
+Load libraries
+
+```{r}
+library(tidyverse)
+library(haven)
+library(broom)
+library(janitor)
+```
+
+
+# Data
+
+## Read data
+
+Two datasets for practice
+
+```{r}
+publish <- read_stata('couart2.dta')
+visit <- read_csv('NMES1988.csv') %>% clean_names()
+```
+
+## Transform data
+
+Take a peek of data
+
+```{r}
+glimpse(publish)
+```
+
+
+For variables:
+
+- fem
+- mar
+
+```{r}
+publish <- publish %>% mutate_if(is.labelled, ~as_factor(.))
+```
+
+
+# Describe data
+
+## Summarize data
+
+Let us see summary of data
+
+```{r}
+summary(publish)
+```
+
+The outcome variable is **art** : that is the number of publications produced by PhD biochemists. 
+
+## Plots outcome variable
+
+```{r}
+ggplot(publish, aes(x = art)) + geom_histogram() 
+```
+
+
+# Estimation
+
+Let us assume the outcome follows the Poisson regression
+
+- random observations
+- independent observations 
+- lineariry in parameters
+- mean = variance 
+
+## Constant only model
+
+Let us estimate a constant model only. No covariates.
+
+```{r}
+mod_0 <- glm(art ~ 1, family = poisson(link = 'log'), 
+             publish)
+summary(mod_0)
+```
+
+The estimated parameters; $\beta_0$ = `r coef(mod_0)`, hence $\mu$ = `r exp(coef(mod_0))` (The estimated mean of `art`). This equals the mean of `art` that is `r mean(publish$art)`.
+
+## Multivariable model
+
+```{r}
+mod_1 <- glm(art ~ fem + mar + kid5 + phd + ment, family = poisson(link = 'log'), 
+             data = publish)
+summary(mod_1)
+```
+
+Or you can use `tidy()` for nicer output
+
+```{r}
+tidy(mod_1, conf.int = TRUE)
+```
+
+## Interpretation
+
+The expected log of count
+
+- the number of articles for women was on average -0.225 the log of article number compared to men
+- the number of articles for married scholar was on average 0.155 the log of article number compared to single scholars
+
+The expected rate:
+
+If we want to interpret using the rate, $\mu$, then for a unit change in $x_k$, the expected count changes by a factor of $exp^{\beta_k}$, holding other other variables constant.  
+
+```{r}
+tidy(mod_1, exponentiate = TRUE, conf.int = TRUE)
+```
+
+So, being a female scientist ($x_{fem}$) decreases the expected number of articles (**art**) by a factor of `r exp(coef(mod_1)[2])`, holding other other variables constant.  
+
+# Prediction
+
+## Predicted log of count
+
+The predicted log of articles for **art**
+
+```{r}
+augment(mod_1)
+```
+
+## Predicted count
+
+The predicted count of **art** for the given covariates for each subject in the data 
+
+```{r}
+exp_count <- predict(mod_1, type = 'response')
+head(exp_count)
+```
+
+Manually, for the 1st subject, we calculate
+
+```{r}
+# The predicted log of count
+0.30461683 - 0.22459423*0 +  0.15524338*1 - 0.18488270*0 + 0.01282258*2.52 + 0.02554275*7
+# The expected (average) count of art 
+exp(0.6709724)
+```
+
+# References
+
+1.  Long J S, Freese J. Regression Models for Categorical Dependent Variables Using Stata
+2. https://cran.r-project.org/web/packages/AER/AER.pdf 
+
